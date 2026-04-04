@@ -1,0 +1,3 @@
+{
+  "extends": "@cloud_cost_analyzer/config/tsconfig.base.json"
+}
