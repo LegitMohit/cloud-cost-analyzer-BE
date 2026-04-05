@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: cloud-cost-db
+    environment:
+      POSTGRES_DB: cloudcost
+      POSTGRES_USER: cloudcost
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: cloud-cost-cache
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
