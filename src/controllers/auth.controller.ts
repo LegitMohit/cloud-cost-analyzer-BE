@@ -30,7 +30,8 @@ export const register = async (req: Request, res: Response) => {
         });
 
         if (existingUser) {
-            return res.status(400).json({ error: "Email already exists" });
+            console.warn(`Registration attempt Email already exists: ${email}`);
+            return res.status(409).json({ error: "Email already exists" });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -42,7 +43,7 @@ export const register = async (req: Request, res: Response) => {
             },
         });
 
-        const token = jwt.sign({ id: user.id }, JWT_SECRET, {
+        const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
             expiresIn: JWT_EXPIRES_IN as any,
         });
 
@@ -52,6 +53,8 @@ export const register = async (req: Request, res: Response) => {
             sameSite: "strict",
             maxAge: COOKIE_MAX_AGE
         });
+
+        console.info(`User registered: ${email} (ID: ${user.id})`);
 
         return res.status(201).json({
             message: "User registered successfully",
@@ -75,16 +78,18 @@ export const login = async (req: Request, res: Response) => {
         });
 
         if (!user) {
-            return res.status(400).json({ error: "Invalid credentials" });
+            console.warn(`Login attempt with non-existent email: ${email}`);
+            return res.status(404).json({ error: "User not found" });
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
 
         if (!isPasswordValid) {
-            return res.status(400).json({ error: "Invalid credentials" });
+            console.warn(`Login attempt with invalid password for email: ${email}`);
+            return res.status(401).json({ error: "Invalid credentials" });
         }
 
-        const token = jwt.sign({ id: user.id }, JWT_SECRET, {
+        const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
             expiresIn: JWT_EXPIRES_IN as any,
         });
 
@@ -94,6 +99,8 @@ export const login = async (req: Request, res: Response) => {
             sameSite: "strict",
             maxAge: COOKIE_MAX_AGE
         });
+
+        console.info(`User logged in: ${email} (ID: ${user.id})`);
 
         return res.status(200).json({
             message: "Login successful",
@@ -111,7 +118,26 @@ export const login = async (req: Request, res: Response) => {
 export const logout = async (_req: Request, res: Response) => {
     res.cookie("token", "", {
         httpOnly: true,
+        secure: env.NODE_ENV === "production",
+        sameSite: "strict",
         expires: new Date(0),
     });
+    
+    console.info("User logged out");
     return res.status(200).json({ message: "Logged out successfully" });
+};
+
+export const getCurrentUser = async (req: Request, res: Response) => {
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+        return res.status(401).json({ error: "Unauthorized: No token provided" });
+    }
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
+        return res.status(200).json({ user: { id: decoded.id, email: decoded.email } });
+    } catch {
+        return res.status(401).json({ error: "Unauthorized: Invalid token" });
+    }
 };
