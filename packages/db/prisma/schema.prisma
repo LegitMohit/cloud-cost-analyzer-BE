@@ -1,45 +1,46 @@
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider = "postgresql"
+  provider = "postgresql"
 }
 
 model User {
-    id          String       @id @default(cuid())
-    email       String       @unique
-    password    String
-    createdAt   DateTime     @default(now())
-    awsAccounts AwsAccount[]
+  id          String       @id @default(cuid())
+  email       String       @unique
+  password    String
+  createdAt   DateTime     @default(now())
+  awsAccounts AwsAccount[]
 }
 
 model AwsAccount {
-    id        String     @id @default(cuid())
-    userId    String
-    user      User       @relation(fields: [userId], references: [id])
-    accessKey String
-    region    String
-    createdAt DateTime   @default(now())
-    resources Resource[]
+  id        String     @id @default(cuid())
+  userId    String
+  accessKey String
+  secretKey String
+  region    String
+  createdAt DateTime   @default(now())
+  user      User       @relation(fields: [userId], references: [id])
+  resources Resource[]
 }
 
 model Resource {
-    id              String           @id @default(cuid())
-    awsAccountId    String
-    awsAccount      AwsAccount       @relation(fields: [awsAccountId], references: [id])
-    resourceType    String
-    resourceId      String
-    status          String
-    estimatedCost   Float
-    recommendations Recommendation[]
+  id              String           @id @default(cuid())
+  awsAccountId    String
+  resourceType    String
+  resourceId      String
+  status          String
+  estimatedCost   Float
+  recommendations Recommendation[]
+  awsAccount      AwsAccount       @relation(fields: [awsAccountId], references: [id])
 }
 
 model Recommendation {
-    id               String   @id @default(cuid())
-    resourceId       String
-    resource         Resource @relation(fields: [resourceId], references: [id])
-    issue            String
-    recommendation   String
-    estimatedSavings Float
+  id               String   @id @default(cuid())
+  resourceId       String
+  issue            String
+  recommendation   String
+  estimatedSavings Float
+  resource         Resource @relation(fields: [resourceId], references: [id])
 }

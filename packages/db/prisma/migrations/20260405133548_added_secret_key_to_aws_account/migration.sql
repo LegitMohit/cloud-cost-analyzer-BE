@@ -13,6 +13,7 @@ CREATE TABLE "AwsAccount" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "accessKey" TEXT NOT NULL,
+    "secretKey" TEXT NOT NULL,
     "region" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

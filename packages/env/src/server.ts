@@ -37,6 +37,7 @@ export const env = createEnv({
     CORS_ORIGIN: z.string().url(),
     NEXT_PUBLIC_API_URL: z.string().url(),
     NEXT_PUBLIC_SERVER_URL: z.string().url(),
+    ENCRYPTION_KEY: z.string().min(32),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
