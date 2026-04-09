@@ -11,6 +11,8 @@ import { CloudWatchClient } from "@aws-sdk/client-cloudwatch";
 import type { CloudWatchClientConfig } from "@aws-sdk/client-cloudwatch";
 import { CostExplorerClient } from "@aws-sdk/client-cost-explorer";
 import type { CostExplorerClientConfig } from "@aws-sdk/client-cost-explorer";
+import { STSClient, GetCallerIdentityCommand } from "@aws-sdk/client-sts";
+import type { STSClientConfig } from "@aws-sdk/client-sts";
 
 export interface AWSClientConfig {
   accessKey: string;
@@ -24,6 +26,7 @@ export interface AWSClients {
   rds: RDSClient;
   cloudwatch: CloudWatchClient;
   costExplorer: CostExplorerClient;
+  sts: STSClient;
 }
 
 export function createAWSClients(config: AWSClientConfig): AWSClients {
@@ -69,12 +72,21 @@ export function createAWSClients(config: AWSClientConfig): AWSClients {
     },
   };
 
+  const stsConfig: STSClientConfig = {
+    region,
+    credentials: {
+      accessKeyId: accessKey,
+      secretAccessKey: secretKey,
+    },
+  };
+
   return {
     ec2: new EC2Client(ec2Config),
     s3: new S3Client(s3Config),
     rds: new RDSClient(rdsConfig),
     cloudwatch: new CloudWatchClient(cloudwatchConfig),
     costExplorer: new CostExplorerClient(costExplorerConfig),
+    sts: new STSClient(stsConfig),
   };
 }
 
@@ -89,4 +101,13 @@ export async function validateAWSCredentials(
     console.error("AWS credential validation failed:", err.message);
     return err.message || "Unknown error occurred while validating AWS credentials.";
   }
+}
+
+export async function getAWSAccountUsername(stsClient: STSClient): Promise<string> {
+  const response = await stsClient.send(new GetCallerIdentityCommand({}));
+  if (response.Arn) {
+    const arnParts = response.Arn.split("/");
+    return arnParts[arnParts.length - 1] || "iam user";
+  }
+  return response.UserId || "iam user";
 }

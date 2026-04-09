@@ -17,6 +17,7 @@ model User {
 model AwsAccount {
   id        String     @id @default(cuid())
   userId    String
+  awsAccountUsername    String
   accessKey String
   secretKey String
   region    String

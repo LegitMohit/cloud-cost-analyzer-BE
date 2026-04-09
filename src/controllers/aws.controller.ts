@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import { prisma } from "@cloud_cost_analyzer/db";
 import { env } from "@cloud_cost_analyzer/env/server";
 import { encrypt } from "../utils/encryption.js";
-import { createAWSClients, validateAWSCredentials } from "../services/aws/awsClient.js";
+import { createAWSClients, validateAWSCredentials, getAWSAccountUsername } from "../services/aws/awsClient.js";
 import { fetchEC2Instances } from "../services/aws/ec2.service.js";
 import { fetchEBSVolumes } from "../services/aws/ebs.service.js";
 import { fetchS3Buckets } from "../services/aws/s3.service.js";
@@ -62,6 +62,8 @@ export const connectAWS = async (req: AuthRequest, res: Response): Promise<void>
 
     const encryptedSecretKey = encrypt(secretKey);
 
+    const awsAccountUsername = await getAWSAccountUsername(clients.sts);
+
     const [ec2Instances, ebsVolumes, s3Buckets, rdsInstances] = await Promise.all([
       fetchEC2Instances(clients.ec2),
       fetchEBSVolumes(clients.ec2),
@@ -72,6 +74,7 @@ export const connectAWS = async (req: AuthRequest, res: Response): Promise<void>
     const awsAccount = await prisma.awsAccount.create({
       data: {
         userId,
+        awsAccountUsername,
         accessKey,
         secretKey: encryptedSecretKey,
         region,
