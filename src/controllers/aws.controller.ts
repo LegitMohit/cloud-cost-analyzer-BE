@@ -64,22 +64,46 @@ export const connectAWS = async (req: AuthRequest, res: Response): Promise<void>
 
     const awsAccountUsername = await getAWSAccountUsername(clients.sts);
 
+    const existingAccount = await prisma.awsAccount.findFirst({
+      where: {
+        userId,
+        accessKey,
+      },
+    });
+
+    let awsAccount;
+
+    if (existingAccount) {
+      awsAccount = await prisma.awsAccount.update({
+        where: { id: existingAccount.id },
+        data: {
+          secretKey: encryptedSecretKey,
+          region,
+          awsAccountUsername,
+        },
+      });
+
+      await prisma.resource.deleteMany({
+        where: { awsAccountId: awsAccount.id },
+      });
+    } else {
+      awsAccount = await prisma.awsAccount.create({
+        data: {
+          userId,
+          awsAccountUsername,
+          accessKey,
+          secretKey: encryptedSecretKey,
+          region,
+        },
+      });
+    }
+
     const [ec2Instances, ebsVolumes, s3Buckets, rdsInstances] = await Promise.all([
       fetchEC2Instances(clients.ec2),
       fetchEBSVolumes(clients.ec2),
       fetchS3Buckets(clients.s3),
       fetchRDSInstances(clients.rds),
     ]);
-
-    const awsAccount = await prisma.awsAccount.create({
-      data: {
-        userId,
-        awsAccountUsername,
-        accessKey,
-        secretKey: encryptedSecretKey,
-        region,
-      },
-    });
 
     const resources = [];
 
@@ -127,10 +151,14 @@ export const connectAWS = async (req: AuthRequest, res: Response): Promise<void>
       data: resources,
     });
 
-    console.info(`AWS account connected for user ${userId}: ${resources.length} resources fetched`);
+    const message = existingAccount
+      ? "AWS account reconnected successfully"
+      : "AWS account connected successfully";
+
+    console.info(`${message} for user ${userId}: ${resources.length} resources fetched`);
 
     res.status(201).json({
-      message: "AWS account connected successfully",
+      message,
       resourcesFetched: resources.length,
     });
   } catch (error) {
@@ -177,12 +205,18 @@ export const getAWSResources = async (req: AuthRequest, res: Response): Promise<
     }
 
     const accountIds = awsAccounts.map((account) => account.id);
+    const accountMap = new Map(awsAccounts.map((a) => [a.id, a.awsAccountUsername]));
 
     const resources = await prisma.resource.findMany({
       where: { awsAccountId: { in: accountIds } },
     });
 
-    res.status(200).json({ resources });
+    const resourcesWithAccount = resources.map((r) => ({
+      ...r,
+      awsAccountUsername: accountMap.get(r.awsAccountId) || "Unknown",
+    }));
+
+    res.status(200).json({ resources: resourcesWithAccount });
   } catch (error) {
     console.error("Get AWS resources error:", error);
     res.status(500).json({ error: "Internal server error" });

@@ -24,13 +24,15 @@ model AwsAccount {
   id                 String     @id @default(cuid())
   userId             String
   awsAccountUsername String
-  accessKey          String     @unique
+  accessKey          String
   secretKey          String
   region             String
   createdAt          DateTime   @default(now())
   user               User       @relation(fields: [userId], references: [id])
   resources          Resource[]
   status             Status     @default(ACTIVE)
+
+  @@unique([userId, accessKey])
 }
 
 model Resource {
