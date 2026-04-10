@@ -88,7 +88,7 @@ export const connectAWS = async (req: AuthRequest, res: Response): Promise<void>
         awsAccountId: awsAccount.id,
         resourceType: "EC2",
         resourceId: instance.instanceId,
-        status: instance.state,
+        resourceStatus: instance.state,
         estimatedCost: 0,
       });
     }
@@ -98,7 +98,7 @@ export const connectAWS = async (req: AuthRequest, res: Response): Promise<void>
         awsAccountId: awsAccount.id,
         resourceType: "EBS",
         resourceId: volume.volumeId,
-        status: volume.attachmentStatus,
+        resourceStatus: volume.attachmentStatus,
         estimatedCost: 0,
       });
     }
@@ -108,7 +108,7 @@ export const connectAWS = async (req: AuthRequest, res: Response): Promise<void>
         awsAccountId: awsAccount.id,
         resourceType: "S3",
         resourceId: bucket.bucketName,
-        status: "active",
+        resourceStatus: "active",
         estimatedCost: 0,
       });
     }
@@ -118,7 +118,7 @@ export const connectAWS = async (req: AuthRequest, res: Response): Promise<void>
         awsAccountId: awsAccount.id,
         resourceType: "RDS",
         resourceId: dbInstance.dbInstanceIdentifier,
-        status: dbInstance.status,
+        resourceStatus: dbInstance.status,
         estimatedCost: 0,
       });
     }

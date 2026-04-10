@@ -6,24 +6,31 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
 model User {
   id          String       @id @default(cuid())
   email       String       @unique
   password    String
   createdAt   DateTime     @default(now())
   awsAccounts AwsAccount[]
+  status      Status       @default(ACTIVE)
 }
 
 model AwsAccount {
-  id        String     @id @default(cuid())
-  userId    String
-  awsAccountUsername    String
-  accessKey String
-  secretKey String
-  region    String
-  createdAt DateTime   @default(now())
-  user      User       @relation(fields: [userId], references: [id])
-  resources Resource[]
+  id                 String     @id @default(cuid())
+  userId             String
+  awsAccountUsername String
+  accessKey          String     @unique
+  secretKey          String
+  region             String
+  createdAt          DateTime   @default(now())
+  user               User       @relation(fields: [userId], references: [id])
+  resources          Resource[]
+  status             Status     @default(ACTIVE)
 }
 
 model Resource {
@@ -31,10 +38,11 @@ model Resource {
   awsAccountId    String
   resourceType    String
   resourceId      String
-  status          String
+  resourceStatus  String
   estimatedCost   Float
   recommendations Recommendation[]
   awsAccount      AwsAccount       @relation(fields: [awsAccountId], references: [id])
+  status          Status           @default(ACTIVE)
 }
 
 model Recommendation {
@@ -44,4 +52,5 @@ model Recommendation {
   recommendation   String
   estimatedSavings Float
   resource         Resource @relation(fields: [resourceId], references: [id])
+  status           Status   @default(ACTIVE)
 }
