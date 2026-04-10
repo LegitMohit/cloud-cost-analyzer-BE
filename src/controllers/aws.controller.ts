@@ -18,6 +18,7 @@ const connectSchema = z.object({
 });
 
 const costQuerySchema = z.object({
+  accountId: z.string().optional(),
   startDate: z.string().min(1),
   endDate: z.string().min(1),
   granularity: z.enum(["DAILY", "MONTHLY", "HOURLY"]).optional(),
@@ -223,9 +224,43 @@ export const getAWSResources = async (req: AuthRequest, res: Response): Promise<
   }
 };
 
-async function getAWSClientForUser(userId: string) {
+export const getConnectedAccounts = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
+    const userId = decoded.id;
+
+    const accounts = await prisma.awsAccount.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        awsAccountUsername: true,
+        accessKey: true,
+        region: true,
+        createdAt: true,
+      },
+    });
+
+    res.status(200).json({ accounts });
+  } catch (error) {
+    console.error("Get connected accounts error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+async function getAWSClientForUser(userId: string, accountId?: string) {
+  const whereCondition: any = { userId };
+  if (accountId) {
+    whereCondition.id = accountId;
+  }
+
   const awsAccount = await prisma.awsAccount.findFirst({
-    where: { userId },
+    where: whereCondition,
   });
 
   if (!awsAccount) {
@@ -254,14 +289,23 @@ export const getCostData = async (req: AuthRequest, res: Response): Promise<void
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
     const userId = decoded.id;
 
-    const { startDate, endDate, granularity } = costQuerySchema.parse(req.body);
+    let { accountId, startDate, endDate, granularity } = costQuerySchema.parse(req.body);
 
-    const clients = await getAWSClientForUser(userId);
+    const clients = await getAWSClientForUser(userId, accountId);
     if (!clients) {
       res.status(400).json({ error: "No AWS account connected" });
       return;
     }
     console.info(`Fetching cost data for user ${userId} from ${startDate} to ${endDate} with granularity ${granularity}`);
+    if (granularity=== "HOURLY") {
+      startDate = `${startDate}T00:00:00Z`;
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, "0");
+      const minutes = String(now.getMinutes()).padStart(2, "0");
+      const seconds = String(now.getSeconds()).padStart(2, "0");
+      endDate = `${endDate}T${hours}:${minutes}:${seconds}Z`;
+      console.info(`startDate=${startDate}\nendDate=${endDate}`);
+    }
     const costData = await getCostAndUsage(clients.costExplorer, {
       startDate,
       endDate,
@@ -274,8 +318,19 @@ export const getCostData = async (req: AuthRequest, res: Response): Promise<void
       res.status(400).json({ error: error.issues });
       return;
     }
+    
     console.error("Get cost data error:", error);
-    res.status(500).json({ error: "Get cost data error" });
+
+    const err = error as any;
+    const message = err?.message || err?.Error?.Message || "Get cost data error";
+    const code = err?.Code || "UnknownError";
+
+    res.status(500).json({
+      error: {
+        code,
+        message,
+      },
+    });
   }
 };
 

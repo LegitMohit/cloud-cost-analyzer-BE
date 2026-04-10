@@ -24,10 +24,14 @@ export async function getCostAndUsage(
   client: CostExplorerClient,
   options: CostQueryOptions
 ): Promise<CostData> {
+  const formatDateForAWS = (date: string): string => {
+    return date;
+  };
+
   const params: GetCostAndUsageCommandInput = {
     TimePeriod: {
-      Start: options.startDate,
-      End: options.endDate,
+      Start: formatDateForAWS(options.startDate),
+      End: formatDateForAWS(options.endDate),
     },
     Granularity: options.granularity || "DAILY",
 
