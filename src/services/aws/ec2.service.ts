@@ -5,6 +5,13 @@ export interface EC2Instance {
   instanceId: string;
   state: string;
   instanceType: string;
+  instanceName?: string;
+  platform?: string;
+  tags?: Record<string, string>;
+  vpcId?: string;
+  subnetId?: string;
+  privateIpAddress?: string;
+  publicIpAddress?: string;
 }
 
 export async function fetchEC2Instances(client: EC2Client): Promise<EC2Instance[]> {
@@ -22,10 +29,24 @@ export async function fetchEC2Instances(client: EC2Client): Promise<EC2Instance[
     for (const reservation of response.Reservations || []) {
       for (const instance of reservation.Instances || []) {
         if (instance.InstanceId) {
+          const tagMap: Record<string, string> = {};
+          for (const tag of instance.Tags || []) {
+            if (tag.Key && tag.Value) {
+              tagMap[tag.Key] = tag.Value;
+            }
+          }
+
           instances.push({
             instanceId: instance.InstanceId,
             state: instance.State?.Name || "unknown",
             instanceType: instance.InstanceType || "unknown",
+            instanceName: tagMap.Name,
+            platform: instance.Platform || "linux",
+            tags: tagMap,
+            vpcId: instance.VpcId,
+            subnetId: instance.SubnetId,
+            privateIpAddress: instance.PrivateIpAddress,
+            publicIpAddress: instance.PublicIpAddress,
           });
         }
       }

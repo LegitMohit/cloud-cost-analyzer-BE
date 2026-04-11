@@ -10,6 +10,7 @@ import { fetchEBSVolumes } from "../services/aws/ebs.service.js";
 import { fetchS3Buckets } from "../services/aws/s3.service.js";
 import { fetchRDSInstances } from "../services/aws/rds.service.js";
 import { getCostAndUsage, getMonthlyForecast } from "../services/aws/costExplorer.service.js";
+import { analyzeAndSaveRecommendations, getRecommendationsByAccount } from "../services/aws/recommendation.service.js";
 
 const connectSchema = z.object({
   accessKey: z.string().min(1),
@@ -83,6 +84,18 @@ export const connectAWS = async (req: AuthRequest, res: Response): Promise<void>
           awsAccountUsername,
         },
       });
+
+      const existingResources = await prisma.resource.findMany({
+        where: { awsAccountId: awsAccount.id },
+        select: { id: true },
+      });
+      const resourceIds = existingResources.map(r => r.id);
+
+      if (resourceIds.length > 0) {
+        await prisma.recommendation.deleteMany({
+          where: { resourceId: { in: resourceIds } },
+        });
+      }
 
       await prisma.resource.deleteMany({
         where: { awsAccountId: awsAccount.id },
@@ -362,6 +375,85 @@ export const getForecast = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
     console.error("Get forecast error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const recommendationQuerySchema = z.object({
+  accountId: z.string().optional(),
+});
+
+export const generateRecommendations = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
+    const userId = decoded.id;
+
+    const { accountId } = recommendationQuerySchema.parse(req.body);
+
+    const whereCondition: any = { userId };
+    if (accountId) {
+      whereCondition.id = accountId;
+    }
+
+    const awsAccounts = await prisma.awsAccount.findMany({
+      where: whereCondition,
+    });
+
+    if (awsAccounts.length === 0) {
+      res.status(400).json({ error: "No AWS account connected" });
+      return;
+    }
+
+    let totalRecommendations = 0;
+    for (const account of awsAccounts) {
+      const count = await analyzeAndSaveRecommendations(account.id);
+      totalRecommendations += count;
+    }
+
+    const recommendations = await getRecommendationsByAccount(userId, accountId);
+
+    res.status(200).json({
+      success: true,
+      message: `Generated ${totalRecommendations} recommendations`,
+      totalRecommendations,
+      recommendations,
+    });
+  } catch (error) {
+    console.error("Generate recommendations error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getRecommendations = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
+    const userId = decoded.id;
+
+    const { accountId } = recommendationQuerySchema.parse(req.query);
+
+    const recommendations = await getRecommendationsByAccount(userId, accountId);
+
+    const totalSavings = recommendations.reduce((sum, r) => sum + r.estimatedSavings, 0);
+
+    res.status(200).json({
+      recommendations,
+      totalSavings,
+      count: recommendations.length,
+    });
+  } catch (error) {
+    console.error("Get recommendations error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
