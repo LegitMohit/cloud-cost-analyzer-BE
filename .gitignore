@@ -4,6 +4,8 @@ node_modules
 .pnp.js
 .dontPush.*
 .vscode
+.kilo
+.cursor
 
 
 # Build outputs
