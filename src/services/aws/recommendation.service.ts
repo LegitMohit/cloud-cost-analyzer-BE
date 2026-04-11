@@ -84,7 +84,7 @@ export async function analyzeAndSaveRecommendations(awsAccountId: string): Promi
 }
 
 export async function getRecommendationsByAccount(userId: string, accountId?: string): Promise<any[]> {
-  const whereCondition: any = { userId };
+  const whereCondition: any = { userId, status: "ACTIVE" };
   if (accountId) {
     whereCondition.id = accountId;
   }

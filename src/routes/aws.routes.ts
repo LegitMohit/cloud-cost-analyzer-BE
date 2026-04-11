@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { connectAWS, getAWSResources, getCostData, getForecast, getConnectedAccounts, generateRecommendations, getRecommendations } from "../controllers/aws.controller.js";
+import { connectAWS, getAWSResources, getCostData, getForecast, getConnectedAccounts, generateRecommendations, getRecommendations, deleteAWSAccount } from "../controllers/aws.controller.js";
 
 const router = Router();
 
@@ -8,6 +8,7 @@ router.get("/resources", getAWSResources);
 router.post("/cost", getCostData);
 router.get("/cost/forecast", getForecast);
 router.get("/connected-accounts", getConnectedAccounts);
+router.delete("/accounts/:id", deleteAWSAccount);
 router.post("/recommendations/generate", generateRecommendations);
 router.get("/recommendations", getRecommendations);
 

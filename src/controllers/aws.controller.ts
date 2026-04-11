@@ -14,7 +14,7 @@ import { analyzeAndSaveRecommendations, getRecommendationsByAccount } from "../s
 
 const connectSchema = z.object({
   accessKey: z.string().min(1),
-  secretKey: z.string().min(1),
+  secretKey: z.string().optional(),
   region: z.string().min(1),
 });
 
@@ -37,7 +37,8 @@ interface AuthRequest extends Request {
 
 export const connectAWS = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { accessKey, secretKey, region } = connectSchema.parse(req.body);
+    const parsed = connectSchema.parse(req.body);
+    const { accessKey, secretKey: providedSecretKey, region } = parsed;
 
     const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
     if (!token) {
@@ -48,15 +49,35 @@ export const connectAWS = async (req: AuthRequest, res: Response): Promise<void>
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
     const userId = decoded.id;
 
-    const clients = createAWSClients({ accessKey, secretKey, region });
+    const existingAccount = await prisma.awsAccount.findFirst({
+      where: {
+        userId,
+        accessKey,
+      },
+    });
+
+    let secretKey: string;
+    let clients: any;
+
+    if (existingAccount) {
+      const { decrypt } = await import("../utils/encryption.js");
+      secretKey = decrypt(existingAccount.secretKey);
+      clients = createAWSClients({ accessKey, secretKey, region: existingAccount.region });
+    } else {
+      if (!providedSecretKey) {
+        res.status(400).json({ error: "Secret key is required for new connections" });
+        return;
+      }
+      secretKey = providedSecretKey;
+      clients = createAWSClients({ accessKey, secretKey, region });
+    }
 
     const isValid = await validateAWSCredentials(clients.ec2);
-    if (isValid!== true) {
+    if (isValid !== true) {
       res.status(401).json({
         success: false,
         error: {
           message: isValid as string
-          // message: "Invalid AWS credentials. Please check your Access Key, Secret Key, and Region."
         },
       });
       return;
@@ -66,13 +87,6 @@ export const connectAWS = async (req: AuthRequest, res: Response): Promise<void>
 
     const awsAccountUsername = await getAWSAccountUsername(clients.sts);
 
-    const existingAccount = await prisma.awsAccount.findFirst({
-      where: {
-        userId,
-        accessKey,
-      },
-    });
-
     let awsAccount;
 
     if (existingAccount) {
@@ -80,8 +94,9 @@ export const connectAWS = async (req: AuthRequest, res: Response): Promise<void>
         where: { id: existingAccount.id },
         data: {
           secretKey: encryptedSecretKey,
-          region,
+          region: existingAccount.region,
           awsAccountUsername,
+          status: "ACTIVE",
         },
       });
 
@@ -210,7 +225,7 @@ export const getAWSResources = async (req: AuthRequest, res: Response): Promise<
     const userId = decoded.id;
 
     const awsAccounts = await prisma.awsAccount.findMany({
-      where: { userId },
+      where: { userId, status: "ACTIVE" },
     });
 
     if (awsAccounts.length === 0) {
@@ -222,7 +237,7 @@ export const getAWSResources = async (req: AuthRequest, res: Response): Promise<
     const accountMap = new Map(awsAccounts.map((a) => [a.id, a.awsAccountUsername]));
 
     const resources = await prisma.resource.findMany({
-      where: { awsAccountId: { in: accountIds } },
+      where: { awsAccountId: { in: accountIds }, status: "ACTIVE" },
     });
 
     const resourcesWithAccount = resources.map((r) => ({
@@ -249,13 +264,14 @@ export const getConnectedAccounts = async (req: AuthRequest, res: Response): Pro
     const userId = decoded.id;
 
     const accounts = await prisma.awsAccount.findMany({
-      where: { userId },
+      where: { userId, status: "ACTIVE" },
       select: {
         id: true,
         awsAccountUsername: true,
         accessKey: true,
         region: true,
         createdAt: true,
+        status: true,
       },
     });
 
@@ -267,7 +283,7 @@ export const getConnectedAccounts = async (req: AuthRequest, res: Response): Pro
 };
 
 async function getAWSClientForUser(userId: string, accountId?: string) {
-  const whereCondition: any = { userId };
+  const whereCondition: any = { userId, status: "ACTIVE" };
   if (accountId) {
     whereCondition.id = accountId;
   }
@@ -396,7 +412,7 @@ export const generateRecommendations = async (req: AuthRequest, res: Response): 
 
     const { accountId } = recommendationQuerySchema.parse(req.body);
 
-    const whereCondition: any = { userId };
+    const whereCondition: any = { userId, status: "ACTIVE" };
     if (accountId) {
       whereCondition.id = accountId;
     }
@@ -443,6 +459,16 @@ export const getRecommendations = async (req: AuthRequest, res: Response): Promi
 
     const { accountId } = recommendationQuerySchema.parse(req.query);
 
+    if (accountId) {
+      const awsAccount = await prisma.awsAccount.findFirst({
+        where: { id: accountId, userId },
+      });
+      if (!awsAccount || awsAccount.status === "INACTIVE") {
+        res.status(400).json({ error: "No AWS account connected" });
+        return;
+      }
+    }
+
     const recommendations = await getRecommendationsByAccount(userId, accountId);
 
     const totalSavings = recommendations.reduce((sum, r) => sum + r.estimatedSavings, 0);
@@ -454,6 +480,59 @@ export const getRecommendations = async (req: AuthRequest, res: Response): Promi
     });
   } catch (error) {
     console.error("Get recommendations error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const deleteAWSAccount = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
+    const userId = decoded.id;
+    const { id } = req.params;
+
+    if (!id || Array.isArray(id)) {
+      res.status(400).json({ error: "Invalid account ID" });
+      return;
+    }
+
+    const account = await prisma.awsAccount.findFirst({
+      where: { id, userId },
+    });
+
+    if (!account || account.status === "INACTIVE") {
+      res.status(400).json({ error: "No AWS account found" });
+      return;
+    }
+
+    await prisma.$transaction([
+      prisma.recommendation.updateMany({
+        where: {
+          resource: {
+            awsAccountId: id,
+          },
+        },
+        data: { status: "INACTIVE" },
+      }),
+      prisma.resource.updateMany({
+        where: { awsAccountId: id },
+        data: { status: "INACTIVE" },
+      }),
+      prisma.awsAccount.update({
+        where: { id },
+        data: { status: "INACTIVE" },
+      }),
+    ]);
+
+    console.info(`AWS account deleted (soft delete): ${account.awsAccountUsername} (ID: ${id})`);
+    res.status(200).json({ message: "AWS account deleted successfully" });
+  } catch (error) {
+    console.error("Delete AWS account error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
