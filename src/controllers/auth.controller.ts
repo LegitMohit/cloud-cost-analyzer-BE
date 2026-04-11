@@ -141,3 +141,59 @@ export const getCurrentUser = async (req: Request, res: Response) => {
         return res.status(401).json({ error: "Unauthorized: Invalid token" });
     }
 };
+
+const changePasswordSchema = z.object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z.string().min(6, "New password must be at least 6 characters"),
+});
+
+export const changePassword = async (req: Request, res: Response) => {
+    try {
+        const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
+
+        const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+        if (!token) {
+            return res.status(401).json({ error: "Unauthorized: No token provided" });
+        }
+
+        const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
+        const userId = decoded.id;
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+        });
+
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        if (!isCurrentPasswordValid) {
+            return res.status(401).json({ error: "Current password is incorrect" });
+        }
+
+        const isSamePassword = await bcrypt.compare(newPassword, user.password);
+        if (isSamePassword) {
+            return res.status(400).json({ error: "New password must be different from current password" });
+        }
+
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+        await prisma.user.update({
+            where: { id: userId },
+            data: { password: hashedNewPassword },
+        });
+
+        console.info(`Password changed for user: ${user.email} (ID: ${userId})`);
+
+        return res.status(200).json({
+            success: true,
+            message: "Password changed successfully",
+        });
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ error: error.issues });
+        }
+        console.error("Change password error:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+};
