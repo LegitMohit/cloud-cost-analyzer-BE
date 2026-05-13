@@ -6,6 +6,7 @@ export interface CostData {
   endDate: string;
   totalCost: number;
   serviceBreakdown: ServiceCost[];
+  awsAccountUsername?: string;
 }
 
 export interface ServiceCost {
@@ -22,7 +23,8 @@ export interface CostQueryOptions {
 
 export async function getCostAndUsage(
   client: CostExplorerClient,
-  options: CostQueryOptions
+  options: CostQueryOptions,
+  awsAccountUsername?: string
 ): Promise<CostData> {
   const formatDateForAWS = (date: string): string => {
     return date;
@@ -66,6 +68,7 @@ export async function getCostAndUsage(
     endDate: options.endDate,
     totalCost,
     serviceBreakdown: serviceCosts,
+    awsAccountUsername,
   };
 }
 

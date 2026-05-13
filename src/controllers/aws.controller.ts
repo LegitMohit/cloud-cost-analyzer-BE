@@ -325,6 +325,22 @@ export const getCostData = async (req: AuthRequest, res: Response): Promise<void
       res.status(400).json({ error: "No AWS account connected" });
       return;
     }
+
+    let awsAccountUsername: string | undefined;
+    if (accountId) {
+      const awsAccount = await prisma.awsAccount.findUnique({
+        where: { id: accountId, userId },
+        select: { awsAccountUsername: true },
+      });
+      awsAccountUsername = awsAccount?.awsAccountUsername;
+    } else {
+      const firstAccount = await prisma.awsAccount.findFirst({
+        where: { userId, status: "ACTIVE" },
+        select: { awsAccountUsername: true },
+      });
+      awsAccountUsername = firstAccount?.awsAccountUsername;
+    }
+
     console.info(`Fetching cost data for user ${userId} from ${startDate} to ${endDate} with granularity ${granularity}`);
     if (granularity=== "HOURLY") {
       startDate = `${startDate}T00:00:00Z`;
@@ -339,7 +355,7 @@ export const getCostData = async (req: AuthRequest, res: Response): Promise<void
       startDate,
       endDate,
       granularity,
-    });
+    }, awsAccountUsername);
 
     res.status(200).json(costData);
   } catch (error) {
