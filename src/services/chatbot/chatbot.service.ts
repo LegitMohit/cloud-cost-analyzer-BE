@@ -48,6 +48,8 @@ const userHistories = new Map<string, ChatMessage[]>();
 
 const OUT_OF_SCOPE_MESSAGE = "I'm sorry, but I'm specifically designed to help with AWS cost analysis, cloud cost optimization, and recommendations. I don't have information about other topics. Please feel free to ask me anything related to your AWS costs, spending patterns, or cost-saving recommendations!";
 
+const NO_DATA_MESSAGE = "I don't have any data to answer your question. Please fetch your cost data or recommendations first, then ask me questions about them.";
+
 function getSystemPrompt(pageType: PageType): string {
   const basePrompt = "You are a helpful AI assistant for a cloud cost analyzer application. ";
   const scopeRestriction = ` IMPORTANT: You must only answer questions related to AWS cloud costs, cost analysis, cost optimization, AWS services, spending patterns, recommendations, or cloud infrastructure. If the user asks about anything unrelated (like general knowledge, other topics, personal questions, etc.), respond with: "${OUT_OF_SCOPE_MESSAGE}" Do not answer off-topic questions.`;
@@ -83,16 +85,42 @@ export async function sendMessage(userId: string, message: string, context: Chat
 
   const history = userHistories.get(userId)!;
 
+  const hasRecommendations = context.recommendations && context.recommendations.length > 0;
+  const hasCostData = context.costData;
+
   let costDataInfo = "";
   let recommendationsInfo = "";
 
-  if (context.recommendations && context.recommendations.length > 0) {
-    const userRecs = context.recommendations.slice(0, 5);
-    recommendationsInfo = `\n\nYour recommendations data: ${JSON.stringify(userRecs)}`;
+  if (hasRecommendations) {
+    const recs = context.recommendations!.slice(0, 5);
+    recommendationsInfo = `\n\nYour recommendations:\n${recs.map((r, i) => 
+      `${i + 1}. Issue: ${r.issue}\n   Recommendation: ${r.recommendation}\n   Estimated savings: $${r.estimatedSavings}/month`
+    ).join('\n')}`;
   }
 
-  if (context.costData) {
-    costDataInfo = `\n\nYour cost analysis data: ${JSON.stringify(context.costData)}`;
+  if (hasCostData) {
+    const cd = context.costData!;
+    let costInfo = `\n\nYour cost analysis:\nTotal Cost: $${cd.totalCost}`;
+    if (cd.awsAccountUsername) {
+      costInfo += `\nAccount: ${cd.awsAccountUsername}`;
+    }
+    if (cd.serviceBreakdown && cd.serviceBreakdown.length > 0) {
+      costInfo += `\nServices:\n${cd.serviceBreakdown.map(s => `  - ${s.serviceName}: $${s.cost}`).join('\n')}`;
+    }
+    costDataInfo = costInfo;
+  }
+
+  const lowerMessage = message.toLowerCase();
+  const asksAboutData = 
+    lowerMessage.includes('cost') || 
+    lowerMessage.includes('recommendation') || 
+    lowerMessage.includes('saving') ||
+    lowerMessage.includes('spending') ||
+    lowerMessage.includes('analyze') ||
+    lowerMessage.includes('summarize');
+
+  if (asksAboutData && !hasRecommendations && !hasCostData) {
+    return NO_DATA_MESSAGE;
   }
 
   const systemPrompt = getSystemPrompt(context.pageType);
