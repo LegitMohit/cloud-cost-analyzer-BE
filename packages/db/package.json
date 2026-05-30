@@ -14,11 +14,11 @@
     "@cloud_cost_analyzer/env": "file:../env",
     "@prisma/client": "7.4.2",
     "@prisma/adapter-pg": "7.4.2",
-    "pg": "^8.13.3"
+    "pg": "^8.13.3",
+    "prisma": "7.4.2"
   },
   "devDependencies": {
     "@cloud_cost_analyzer/config": "file:../config",
-    "prisma": "7.4.2",
     "@types/pg": "^8.11.11",
     "typescript": "^5"
   }
