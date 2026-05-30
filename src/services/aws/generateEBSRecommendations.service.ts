@@ -21,7 +21,7 @@ export async function generateEBSRecommendations(clients: AWSClients, awsAccount
   const dbResources = await prisma.resource.findMany({
     where: { awsAccountId, resourceType: "EBS" },
   });
-  const resourceMap = new Map(dbResources.map(r => [r.resourceId, r]));
+  const resourceMap = new Map(dbResources.map((r: { resourceId: string; id: string }) => [r.resourceId, r]));
 
   for (const volume of volumes) {
     const resource = resourceMap.get(volume.volumeId);

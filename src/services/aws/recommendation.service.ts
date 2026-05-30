@@ -95,7 +95,7 @@ export async function getRecommendationsByAccount(userId: string, accountId?: st
 
   if (awsAccounts.length === 0) return [];
 
-  const accountIds = awsAccounts.map(a => a.id);
+  const accountIds = awsAccounts.map((a: { id: string }) => a.id);
 
   const recommendations = await prisma.recommendation.findMany({
     where: {
@@ -112,7 +112,7 @@ export async function getRecommendationsByAccount(userId: string, accountId?: st
     orderBy: { estimatedSavings: "desc" },
   });
 
-  return recommendations.map(r => ({
+  return recommendations.map((r: { id: string; issue: string; recommendation: string; estimatedSavings: number; resourceId: string; resource?: { resourceType?: string; resourceId?: string; awsAccount?: { awsAccountUsername?: string } } }) => ({
     id: r.id,
     issue: r.issue,
     recommendation: r.recommendation,

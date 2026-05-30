@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+export { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { env } from "@cloud_cost_analyzer/env/server";

@@ -104,7 +104,7 @@ export const connectAWS = async (req: AuthRequest, res: Response): Promise<void>
         where: { awsAccountId: awsAccount.id },
         select: { id: true },
       });
-      const resourceIds = existingResources.map(r => r.id);
+      const resourceIds = existingResources.map((r: { id: string }) => r.id);
 
       if (resourceIds.length > 0) {
         await prisma.recommendation.deleteMany({
@@ -233,14 +233,14 @@ export const getAWSResources = async (req: AuthRequest, res: Response): Promise<
       return;
     }
 
-    const accountIds = awsAccounts.map((account) => account.id);
-    const accountMap = new Map(awsAccounts.map((a) => [a.id, a.awsAccountUsername]));
+    const accountIds = awsAccounts.map((account: { id: string }) => account.id);
+    const accountMap = new Map(awsAccounts.map((a: { id: string; awsAccountUsername: string }) => [a.id, a.awsAccountUsername]));
 
     const resources = await prisma.resource.findMany({
       where: { awsAccountId: { in: accountIds }, status: "ACTIVE" },
     });
 
-    const resourcesWithAccount = resources.map((r) => ({
+    const resourcesWithAccount = resources.map((r: { awsAccountId: string }) => ({
       ...r,
       awsAccountUsername: accountMap.get(r.awsAccountId) || "Unknown",
     }));

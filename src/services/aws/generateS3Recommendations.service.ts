@@ -16,7 +16,7 @@ export async function generateS3Recommendations(clients: AWSClients, awsAccountI
   const dbResources = await prisma.resource.findMany({
     where: { awsAccountId, resourceType: "S3" },
   });
-  const resourceMap = new Map(dbResources.map(r => [r.resourceId, r]));
+  const resourceMap = new Map(dbResources.map((r: { resourceId: string; id: string }) => [r.resourceId, r]));
 
   for (const bucket of buckets) {
     const resource = resourceMap.get(bucket.bucketName);

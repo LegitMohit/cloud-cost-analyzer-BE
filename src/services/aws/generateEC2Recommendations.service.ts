@@ -52,7 +52,7 @@ export async function generateEC2Recommendations(clients: AWSClients, awsAccount
   const dbResources = await prisma.resource.findMany({
     where: { awsAccountId, resourceType: "EC2" },
   });
-  const resourceMap = new Map(dbResources.map(r => [r.resourceId, r]));
+  const resourceMap = new Map(dbResources.map((r: { resourceId: string; id: string }) => [r.resourceId, r]));
 
   for (const instance of instances) {
     const resource = resourceMap.get(instance.instanceId);
