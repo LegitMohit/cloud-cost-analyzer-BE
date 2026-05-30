@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "rimraf dist && tsc",
+    "build": "prisma generate --schema=packages/db/prisma/schema.prisma && rimraf dist && tsc",
     "start": "node dist/server.js",
     "lint": "eslint src"
   },
@@ -43,6 +43,7 @@
     "@types/ms": "^2.1.0",
     "@types/node": "^22.10.2",
     "nodemon": "^3.1.9",
+    "prisma": "^5.20.0",
     "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
