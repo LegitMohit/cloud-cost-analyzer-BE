@@ -27,6 +27,8 @@ function loadEnv() {
 loadEnv();
 
 export const env = createEnv({
+  clientPrefix: "",
+  client: {},
   server: {
     DATABASE_URL: z.string().min(1),
     REDIS_URL: z.string().min(1).optional(),
