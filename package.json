@@ -3,12 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "workspaces": ["packages/*"],
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "prisma generate && rimraf dist && tsc",
     "start": "node dist/server.js",
-    "lint": "eslint src",
-    "postinstall": "prisma generate"
+    "lint": "eslint src"
+  },
+  "engines": {
+    "node": "20.x",
+    "npm": ">=8.0.0"
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch": "^3.729.0",

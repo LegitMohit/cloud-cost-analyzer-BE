@@ -1,0 +1,13 @@
+{
+  "build": {
+    "env": {
+      "NODE_ENV": "production",
+      "NEXT_PUBLIC_SKIP_DATABASE_URL": "false"
+    }
+  },
+  "functions": {
+    "src/**/*.ts": {
+      "includeFiles": "packages/**"
+    }
+  }
+}
