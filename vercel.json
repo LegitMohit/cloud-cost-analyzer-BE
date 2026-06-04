@@ -5,9 +5,12 @@
       "NEXT_PUBLIC_SKIP_DATABASE_URL": "false"
     }
   },
+  "outputDirectory": "dist/src",
   "functions": {
-    "src/**/*.ts": {
-      "includeFiles": "packages/**"
+    "src/server.ts": {
+      "includeFiles": [
+        "prisma/**/*"
+      ]
     }
   }
 }

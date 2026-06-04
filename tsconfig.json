@@ -1,13 +1,12 @@
 {
     "extends": "@cloud_cost_analyzer/config/tsconfig.base.json",
     "compilerOptions": {
-        "composite": true,
-        "outDir": "dist",
+        "moduleResolution": "node",
+        "outDir": "dist/src",
         "baseUrl": ".",
+        "rootDir": "src",
         "paths": {
-            "@/*": [
-                "./src/*"
-            ]
+            "@/*": ["./src/*"]
         }
     },
     "include": [

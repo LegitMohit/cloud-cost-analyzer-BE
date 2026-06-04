@@ -3,9 +3,13 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "main": "./dist/server.js",
+  "types": "./dist/server.d.ts",
   "exports": {
-    "./server": "./src/server.ts",
-    "./web": "./src/web.ts"
+    ".": "./dist/server.js",
+    "./server": "./dist/server.js",
+    "./web": "./dist/web.js",
+    "./*": "./dist/*"
   },
   "dependencies": {
     "@t3-oss/env-core": "^0.13.1",
