@@ -25,19 +25,12 @@ for (const pkg of packages) {
 
 await esbuild.build({
   entryPoints: ['src/server.ts'],
-  bundle: true,
+  bundle: false,
   platform: 'node',
   target: 'node20',
   format: 'esm',
-  outfile,
-  external: ['@prisma/client', '@prisma/adapter-pg', 'pg', '@cloud_cost_analyzer/env', '@cloud_cost_analyzer/db'],
-  nodePaths: ['.'],
-  banner: {
-    js: `
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-`
-  }
+  outdir: 'dist',
+  splitting: false,
 });
 
-console.log('Bundled server.js created successfully');
+console.log('Bundle created successfully');
