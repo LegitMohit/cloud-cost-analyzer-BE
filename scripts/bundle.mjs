@@ -30,7 +30,7 @@ await esbuild.build({
   target: 'node20',
   format: 'esm',
   outfile,
-  external: ['@prisma/client', '@prisma/adapter-pg', 'pg'],
+  external: ['@prisma/client', '@prisma/adapter-pg', 'pg', '@cloud_cost_analyzer/env', '@cloud_cost_analyzer/db'],
   nodePaths: ['.'],
   banner: {
     js: `

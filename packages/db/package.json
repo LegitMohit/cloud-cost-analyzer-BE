@@ -2,11 +2,11 @@
   "name": "@cloud_cost_analyzer/db",
   "version": "0.1.0",
   "type": "module",
-  "main": "./dist/src/index.js",
-  "types": "./dist/src/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./dist/src/index.js",
-    "./*": "./dist/src/*"
+    ".": "./dist/index.js",
+    "./*": "./dist/*"
   },
   "scripts": {
     "db:push": "prisma db push",
