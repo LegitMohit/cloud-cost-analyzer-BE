@@ -1,14 +1,10 @@
 {
+  "version": 2,
   "build": {
     "env": {
       "NODE_ENV": "production",
       "NEXT_PUBLIC_SKIP_DATABASE_URL": "false"
     }
   },
-  "outputDirectory": "dist",
-  "functions": {
-    "dist/server.js": {
-      "includeFiles": "prisma/**/*"
-    }
-  }
+  "outputDirectory": "dist"
 }
