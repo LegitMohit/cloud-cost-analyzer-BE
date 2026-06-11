@@ -9,6 +9,9 @@ import { errorHandler } from "./middleware/error.middleware.js";
 const app = express();
 const PORT = env.PORT;
 
+// Trust proxy for correct cookie handling on Vercel
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(helmet());
 app.use(

@@ -49,8 +49,8 @@ export const register = async (req: Request, res: Response) => {
 
         res.cookie("token", token, {
             httpOnly: true,
-            secure: env.NODE_ENV === "production",
-            sameSite: "strict",
+            secure: true,
+            sameSite: "none" as const,
             maxAge: COOKIE_MAX_AGE
         });
 
@@ -95,8 +95,8 @@ export const login = async (req: Request, res: Response) => {
 
         res.cookie("token", token, {
             httpOnly: true,
-            secure: env.NODE_ENV === "production",
-            sameSite: "strict",
+            secure: true,
+            sameSite: "none" as const,
             maxAge: COOKIE_MAX_AGE
         });
 
@@ -118,8 +118,8 @@ export const login = async (req: Request, res: Response) => {
 export const logout = async (_req: Request, res: Response) => {
     res.cookie("token", "", {
         httpOnly: true,
-        secure: env.NODE_ENV === "production",
-        sameSite: "strict",
+        secure: true,
+        sameSite: "none" as const,
         expires: new Date(0),
     });
     
