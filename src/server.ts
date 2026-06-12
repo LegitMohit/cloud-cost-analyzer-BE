@@ -2,26 +2,21 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { env } from "@cloud_cost_analyzer/env/server";
-import cookieParser from "cookie-parser";
 import routes from "./routes/index.js";
 import { errorHandler } from "./middleware/error.middleware.js";
 
 const app = express();
 const PORT = env.PORT;
 
-// Trust proxy for correct cookie handling on Vercel
-app.set('trust proxy', 1);
-
 // Middleware
 app.use(helmet());
 app.use(
     cors({
         origin: env.CORS_ORIGIN,
-        credentials: true,
+        credentials: false,
     })
 );
 app.use(express.json());
-app.use(cookieParser());
 
 // Routes
 app.use("/", routes);

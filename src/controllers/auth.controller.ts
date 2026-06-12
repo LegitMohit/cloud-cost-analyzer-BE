@@ -1,7 +1,6 @@
 import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import ms from "ms";
 import { prisma } from "@cloud_cost_analyzer/db";
 import { z } from "zod";
 
@@ -9,7 +8,6 @@ import { env } from "@cloud_cost_analyzer/env/server";
 
 const JWT_SECRET = env.JWT_SECRET;
 const JWT_EXPIRES_IN = env.JWT_EXPIRES_IN;
-const COOKIE_MAX_AGE = ms(JWT_EXPIRES_IN as ms.StringValue) ?? 7 * 24 * 60 * 60 * 1000;
 
 const registerSchema = z.object({
     email: z.string().email(),
@@ -47,17 +45,11 @@ export const register = async (req: Request, res: Response) => {
             expiresIn: JWT_EXPIRES_IN as any,
         });
 
-        res.cookie("token", token, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "none" as const,
-            maxAge: COOKIE_MAX_AGE
-        });
-
         console.info(`User registered: ${email} (ID: ${user.id})`);
 
         return res.status(201).json({
-            message: "User registered successfully",
+            success: true,
+            token,
             user: { id: user.id, email: user.email },
         });
     } catch (error) {
@@ -93,17 +85,11 @@ export const login = async (req: Request, res: Response) => {
             expiresIn: JWT_EXPIRES_IN as any,
         });
 
-        res.cookie("token", token, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "none" as const,
-            maxAge: COOKIE_MAX_AGE
-        });
-
         console.info(`User logged in: ${email} (ID: ${user.id})`);
 
         return res.status(200).json({
-            message: "Login successful",
+            success: true,
+            token,
             user: { id: user.id, email: user.email },
         });
     } catch (error) {
@@ -116,29 +102,23 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const logout = async (_req: Request, res: Response) => {
-    res.cookie("token", "", {
-        httpOnly: true,
-        secure: true,
-        sameSite: "none" as const,
-        expires: new Date(0),
-    });
-    
     console.info("User logged out");
-    return res.status(200).json({ message: "Logged out successfully" });
+    return res.status(200).json({ success: true, message: "Logged out successfully" });
 };
 
 export const getCurrentUser = async (req: Request, res: Response) => {
-    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(" ")[1];
 
     if (!token) {
-        return res.status(401).json({ error: "Unauthorized: No token provided" });
+        return res.status(401).json({ success: false, error: "Unauthorized: No token provided" });
     }
 
     try {
         const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
         return res.status(200).json({ user: { id: decoded.id, email: decoded.email } });
     } catch {
-        return res.status(401).json({ error: "Unauthorized: Invalid token" });
+        return res.status(401).json({ success: false, error: "Unauthorized: Invalid token" });
     }
 };
 
@@ -151,9 +131,10 @@ export const changePassword = async (req: Request, res: Response) => {
     try {
         const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
 
-        const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(" ")[1];
         if (!token) {
-            return res.status(401).json({ error: "Unauthorized: No token provided" });
+            return res.status(401).json({ success: false, error: "Unauthorized: No token provided" });
         }
 
         const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
@@ -164,17 +145,17 @@ export const changePassword = async (req: Request, res: Response) => {
         });
 
         if (!user) {
-            return res.status(404).json({ error: "User not found" });
+            return res.status(404).json({ success: false, error: "User not found" });
         }
 
         const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
         if (!isCurrentPasswordValid) {
-            return res.status(401).json({ error: "Current password is incorrect" });
+            return res.status(401).json({ success: false, error: "Current password is incorrect" });
         }
 
         const isSamePassword = await bcrypt.compare(newPassword, user.password);
         if (isSamePassword) {
-            return res.status(400).json({ error: "New password must be different from current password" });
+            return res.status(400).json({ success: false, error: "New password must be different from current password" });
         }
 
         const hashedNewPassword = await bcrypt.hash(newPassword, 10);

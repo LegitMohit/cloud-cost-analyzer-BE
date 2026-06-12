@@ -11,10 +11,11 @@ export interface AuthRequest extends Request {
 
 export const requireAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(" ")[1];
 
         if (!token) {
-            return res.status(401).json({ error: "Unauthorized: No token provided" });
+            return res.status(401).json({ success: false, error: "Unauthorized: No token provided" });
         }
 
         const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
@@ -25,12 +26,12 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
         });
 
         if (!user) {
-            return res.status(401).json({ error: "Unauthorized: User not found" });
+            return res.status(401).json({ success: false, error: "Unauthorized: User not found" });
         }
 
         req.user = user;
         next();
     } catch (error) {
-        return res.status(401).json({ error: "Unauthorized: Invalid token" });
+        return res.status(401).json({ success: false, error: "Unauthorized: Invalid token" });
     }
 };

@@ -40,9 +40,10 @@ export const connectAWS = async (req: AuthRequest, res: Response): Promise<void>
     const parsed = connectSchema.parse(req.body);
     const { accessKey, secretKey: providedSecretKey, region } = parsed;
 
-    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(" ")[1];
     if (!token) {
-      res.status(401).json({ error: "Unauthorized" });
+      res.status(401).json({ success: false, error: "Unauthorized" });
       return;
     }
 
@@ -215,9 +216,10 @@ export const connectAWS = async (req: AuthRequest, res: Response): Promise<void>
 
 export const getAWSResources = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(" ")[1];
     if (!token) {
-      res.status(401).json({ error: "Unauthorized" });
+      res.status(401).json({ success: false, error: "Unauthorized" });
       return;
     }
 
@@ -254,9 +256,10 @@ export const getAWSResources = async (req: AuthRequest, res: Response): Promise<
 
 export const getConnectedAccounts = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(" ")[1];
     if (!token) {
-      res.status(401).json({ error: "Unauthorized" });
+      res.status(401).json({ success: false, error: "Unauthorized" });
       return;
     }
 
@@ -308,9 +311,10 @@ async function getAWSClientForUser(userId: string, accountId?: string) {
 
 export const getCostData = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(" ")[1];
     if (!token) {
-      res.status(401).json({ error: "Unauthorized" });
+      res.status(401).json({ success: false, error: "Unauthorized" });
       return;
     }
 
@@ -381,9 +385,10 @@ export const getCostData = async (req: AuthRequest, res: Response): Promise<void
 
 export const getForecast = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(" ")[1];
     if (!token) {
-      res.status(401).json({ error: "Unauthorized" });
+      res.status(401).json({ success: false, error: "Unauthorized" });
       return;
     }
 
@@ -417,9 +422,10 @@ const recommendationQuerySchema = z.object({
 
 export const generateRecommendations = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(" ")[1];
     if (!token) {
-      res.status(401).json({ error: "Unauthorized" });
+      res.status(401).json({ success: false, error: "Unauthorized" });
       return;
     }
 
@@ -464,9 +470,10 @@ export const generateRecommendations = async (req: AuthRequest, res: Response): 
 
 export const getRecommendations = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(" ")[1];
     if (!token) {
-      res.status(401).json({ error: "Unauthorized" });
+      res.status(401).json({ success: false, error: "Unauthorized" });
       return;
     }
 
@@ -502,9 +509,10 @@ export const getRecommendations = async (req: AuthRequest, res: Response): Promi
 
 export const deleteAWSAccount = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(" ")[1];
     if (!token) {
-      res.status(401).json({ error: "Unauthorized" });
+      res.status(401).json({ success: false, error: "Unauthorized" });
       return;
     }
 
