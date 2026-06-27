@@ -87,6 +87,8 @@ export const login = async (req: Request, res: Response) => {
 
         console.info(`User logged in: ${email} (ID: ${user.id})`);
 
+        res.cookie("token", token, { httpOnly: true, secure: true, sameSite: "none" });
+
         return res.status(200).json({
             success: true,
             token,
