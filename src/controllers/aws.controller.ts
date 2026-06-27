@@ -42,12 +42,14 @@ export const connectAWS = async (req: AuthRequest, res: Response): Promise<void>
 
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(" ")[1];
-    if (!token) {
+    const cookieToken = (req as any).cookies?.token;
+    const finalToken = cookieToken || token;
+    if (!finalToken) {
       res.status(401).json({ success: false, error: "Unauthorized" });
       return;
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
+    const decoded = jwt.verify(finalToken, JWT_SECRET) as { id: string; email: string };
     const userId = decoded.id;
 
     const existingAccount = await prisma.awsAccount.findFirst({
@@ -218,12 +220,14 @@ export const getAWSResources = async (req: AuthRequest, res: Response): Promise<
   try {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(" ")[1];
-    if (!token) {
+    const cookieToken = (req as any).cookies?.token;
+    const finalToken = cookieToken || token;
+    if (!finalToken) {
       res.status(401).json({ success: false, error: "Unauthorized" });
       return;
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
+    const decoded = jwt.verify(finalToken, JWT_SECRET) as { id: string; email: string };
     const userId = decoded.id;
 
     const awsAccounts = await prisma.awsAccount.findMany({
@@ -258,12 +262,14 @@ export const getConnectedAccounts = async (req: AuthRequest, res: Response): Pro
   try {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(" ")[1];
-    if (!token) {
+    const cookieToken = (req as any).cookies?.token;
+    const finalToken = cookieToken || token;
+    if (!finalToken) {
       res.status(401).json({ success: false, error: "Unauthorized" });
       return;
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
+    const decoded = jwt.verify(finalToken, JWT_SECRET) as { id: string; email: string };
     const userId = decoded.id;
 
     const accounts = await prisma.awsAccount.findMany({
@@ -313,13 +319,15 @@ export const getCostData = async (req: AuthRequest, res: Response): Promise<void
   try {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(" ")[1];
-    if (!token) {
+    const cookieToken = (req as any).cookies?.token;
+    const finalToken = cookieToken || token;
+    if (!finalToken) {
       res.status(401).json({ success: false, error: "Unauthorized" });
       return;
     }
 
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
+    const decoded = jwt.verify(finalToken, JWT_SECRET) as { id: string; email: string };
     const userId = decoded.id;
 
     let { accountId, startDate, endDate, granularity } = costQuerySchema.parse(req.body);
@@ -387,12 +395,14 @@ export const getForecast = async (req: AuthRequest, res: Response): Promise<void
   try {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(" ")[1];
-    if (!token) {
+    const cookieToken = (req as any).cookies?.token;
+    const finalToken = cookieToken || token;
+    if (!finalToken) {
       res.status(401).json({ success: false, error: "Unauthorized" });
       return;
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
+    const decoded = jwt.verify(finalToken, JWT_SECRET) as { id: string; email: string };
     const userId = decoded.id;
 
     const { month } = forecastQuerySchema.parse(req.query);
@@ -424,12 +434,14 @@ export const generateRecommendations = async (req: AuthRequest, res: Response): 
   try {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(" ")[1];
-    if (!token) {
+    const cookieToken = (req as any).cookies?.token;
+    const finalToken = cookieToken || token;
+    if (!finalToken) {
       res.status(401).json({ success: false, error: "Unauthorized" });
       return;
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
+    const decoded = jwt.verify(finalToken, JWT_SECRET) as { id: string; email: string };
     const userId = decoded.id;
 
     const { accountId } = recommendationQuerySchema.parse(req.body);
@@ -472,12 +484,14 @@ export const getRecommendations = async (req: AuthRequest, res: Response): Promi
   try {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(" ")[1];
-    if (!token) {
+    const cookieToken = (req as any).cookies?.token;
+    const finalToken = cookieToken || token;
+    if (!finalToken) {
       res.status(401).json({ success: false, error: "Unauthorized" });
       return;
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
+    const decoded = jwt.verify(finalToken, JWT_SECRET) as { id: string; email: string };
     const userId = decoded.id;
 
     const { accountId } = recommendationQuerySchema.parse(req.query);
@@ -511,12 +525,14 @@ export const deleteAWSAccount = async (req: AuthRequest, res: Response): Promise
   try {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(" ")[1];
-    if (!token) {
+    const cookieToken = (req as any).cookies?.token;
+    const finalToken = cookieToken || token;
+    if (!finalToken) {
       res.status(401).json({ success: false, error: "Unauthorized" });
       return;
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
+    const decoded = jwt.verify(finalToken, JWT_SECRET) as { id: string; email: string };
     const userId = decoded.id;
     const { id } = req.params;
 

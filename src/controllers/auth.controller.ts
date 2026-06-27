@@ -111,13 +111,15 @@ export const logout = async (_req: Request, res: Response) => {
 export const getCurrentUser = async (req: Request, res: Response) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(" ")[1];
+    const cookieToken = (req as any).cookies?.token;
+    const finalToken = cookieToken || token;
 
-    if (!token) {
+    if (!finalToken) {
         return res.status(401).json({ success: false, error: "Unauthorized: No token provided" });
     }
 
     try {
-        const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
+        const decoded = jwt.verify(finalToken, JWT_SECRET) as { id: string; email: string };
         return res.status(200).json({ user: { id: decoded.id, email: decoded.email } });
     } catch {
         return res.status(401).json({ success: false, error: "Unauthorized: Invalid token" });
@@ -135,11 +137,13 @@ export const changePassword = async (req: Request, res: Response) => {
 
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(" ")[1];
-        if (!token) {
+        const cookieToken = (req as any).cookies?.token;
+        const finalToken = cookieToken || token;
+        if (!finalToken) {
             return res.status(401).json({ success: false, error: "Unauthorized: No token provided" });
         }
 
-        const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
+        const decoded = jwt.verify(finalToken, JWT_SECRET) as { id: string; email: string };
         const userId = decoded.id;
 
         const user = await prisma.user.findUnique({
