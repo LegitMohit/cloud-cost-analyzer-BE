@@ -1,3 +1,4 @@
+import cookieParser from "cookie-parser";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -10,6 +11,7 @@ const PORT = env.PORT;
 
 // Middleware
 app.use(helmet());
+app.use(cookieParser());
 app.use(
     cors({
         origin: env.CORS_ORIGIN,

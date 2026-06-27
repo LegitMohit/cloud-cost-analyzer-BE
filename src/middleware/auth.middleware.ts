@@ -13,12 +13,14 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
     try {
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(" ")[1];
+        const cookieToken = (req as any).cookies?.token;
+        const finalToken = cookieToken || token;
 
-        if (!token) {
+        if (!finalToken) {
             return res.status(401).json({ success: false, error: "Unauthorized: No token provided" });
         }
 
-        const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
+        const decoded = jwt.verify(finalToken, JWT_SECRET) as { id: string };
 
         const user = await prisma.user.findUnique({
             where: { id: decoded.id },
