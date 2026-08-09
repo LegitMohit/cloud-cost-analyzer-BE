@@ -8,14 +8,14 @@
   ],
   "main": "./dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "node scripts/sync-packages.mjs && tsx watch src/server.ts",
     "prepare": "npm run build:packages",
     "build:env": "node scripts/build-env.mjs",
     "build:db": "node scripts/build-db.mjs",
     "build:packages": "npm run build:env && npm run build:db && node scripts/prepare.mjs",
     "build": "npm run build:packages && prisma generate && node scripts/bundle.mjs",
     "vercel-build": "npm run build",
-    "start": "node dist/server.js",
+    "start": "node scripts/sync-packages.mjs && node dist/server.js",
     "lint": "eslint src"
   },
   "engines": {
@@ -68,3 +68,4 @@
     "typescript": "^5"
   }
 }
+
