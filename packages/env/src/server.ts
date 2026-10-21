@@ -41,7 +41,7 @@ export const env = createEnv({
     NEXT_PUBLIC_SERVER_URL: z.string().url(),
     ENCRYPTION_KEY: z.string().min(32),
     GROQ_API_KEY: z.string().min(1),
-    GROQ_MODEL: z.string().default("llama-3.3-70b-versatile"),
+    GROQ_MODEL: z.string().default("openai/gpt-oss-120b"),
     LOGIN_EMAIL: z.string().email().optional(),
     LOGIN_PASSWORD: z.string().optional(),
     LOGIN_API_URL: z.string().url().optional(),
